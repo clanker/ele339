@@ -1,0 +1,162 @@
+---
+title: "Lab 1 Report"
+author: "Cory Lanker"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.height = 3.25, fig.width = 6.5, fig.align = 'center')
+library(ggplot2)
+library(latex2exp)
+```
+
+## Introduction
+
+This lab explores basic properties of the Si and Ge diodes, including temperature effects on diode current.
+SPICE simulations validate lab measurements.
+
+## Diode measurements
+
+The following $I$ vs. $V$ measurements come from
+a [1N4148](https://www.digikey.com/en/products/detail/onsemi/1N4148/458603) Si rectifier diode and
+for the [1N34](https://www.digikey.com/en/products/detail/nte-electronics-inc/1N34A/11644260) Ge rectifier diode.
+SPICE simulations confirmed that the 1N4148 performs similar
+to a 1N914 diode, as no SPICE model for the 1N916 could be
+located.
+
+```{r p1}
+si_iv <- readr::read_csv("p1-si-diode-i-vs-v.csv")
+si_iv |>
+  ggplot(aes(x = mV, y = mA, color = Sample)) +
+  geom_point() +
+  geom_line() +
+  stat_smooth(method = "lm",
+              size = 1/5, alpha = 1/3) +
+  labs(x = TeX(r"($V_D$ (mV))"),
+       y = TeX(r"($I_D$ (mA))"),
+       title = "Diode lab measurements for Si (1N4148) and Ge (1N34A)",
+       subtitle = "Linear fit shown for non-linearity referencing") +
+  theme(legend.position = 'top') +
+  scale_y_log10()
+```
+
+The exponential effect of the current is amplified at low
+voltages and dampened
+at high voltages. The former effect may be due to milliamp-meter low current errors. The latter effect may again
+be due to internal diode resistance.
+
+There is something preventing the Schottky exponential behavior
+for the Ge diode (1N34A). I don't know why, but posit that it is
+due to the current limitations of this diode. Its rated amperage is
+50 mA though.
+
+## Comparing with SPICE models
+
+```{r p3}
+spice_dat <- readr::read_delim("spice-diodes.txt", delim = " ") |>
+  dplyr::select(VD, ISi, IGe) |>
+  tidyr::pivot_longer(cols = 2:3, names_to = "Diode")
+
+spice_dat |> 
+  ggplot(aes(x = VD*1000, y = value*1000)) +
+  geom_line(aes(color = Diode)) +
+  geom_point(data = si_iv |>
+               dplyr::mutate(Sample = factor(Sample)), 
+             mapping = aes(x = mV, y = mA, shape = Sample),
+             color = 'grey50',
+             size = 1) +
+  labs(x = TeX(r"($V_D$ (mV))"),
+       y = TeX(r"($I_D$ (mA))"),
+       title = "SPICE models for Si diode 1N4148 and Ge Diode 1N34A",
+       subtitle = "I-V characteristic")
+```
+
+The SPICE model roughly agree with the measurements.
+
+## Temperature effects in SPICE
+
+Here are the I-V curves for different temperatures for these two diodes.
+It's reasonable that the current increases with temperature
+for a given diode voltage due to the increased 
+carrier excitation and mobility.
+
+```{r p5-temp}
+dat_temp <- readr::read_table("spice-diodes-temp.txt") |>
+  dplyr::rename("V" = "sweep",
+                ".1N4148_Si" = "I_Si", 
+                ".1N34A_Ge" = "I_Ge") |>
+  dplyr::mutate(Temp = rep(c(27, 52, 77), each = 51)) |>
+  tidyr::pivot_longer(cols = dplyr::contains("1N"),
+                      names_to = "Diode",
+                      values_to = "I") |>
+  dplyr::select(-Index, -X5)
+
+dat_temp |>
+  tidyr::unite(Diode, Temp, col = "Diode_Temp", remove = FALSE) |>
+  ggplot(aes(x = V, y = I, color = factor(Temp), linetype = Diode, group = Diode_Temp)) +
+  geom_line() +
+  labs(x = TeX(r"($V_D$ (V))"),
+       y = TeX(r"($I_D$ (A))"),
+       title = "I-V characteristics for increasing circuit temperatures in SPICE",
+       color = TeX(r"(Temp ($^\circ$C))"))
+```
+
+I can get the temperature changes in diode voltage 
+for a given current with the following method:
+
+1. for a given diode, calculate the corresponding voltage
+for currents $(0.01, 0.02, \dots, I_{max})$ A for
+the tested temperatures.
+2. plot the changes in voltage for each of the two
+temperature increases
+
+Here are plots of 25$^\circ$C changes in voltage.
+
+```{r}
+calc_v_given_i <- function(v, i) {
+  i_seq <- seq(0.01, max(floor(i * 100))/100, 0.01)
+  return(tibble::tibble(i_seq = i_seq,
+                        v_seq = stats::approx(i, v, i_seq)$y))
+}
+
+dat_del_temp <- dat_temp |>
+  tidyr::nest(data = c(V, I)) |>
+  dplyr::mutate(y = purrr::map(data, \(x) calc_v_given_i(x$V, x$I)))
+```
+
+
+```{r}
+dat_del_temp |>
+  dplyr::select(-data) |>
+  tidyr::unnest(y) |>
+  tidyr::unite(Diode, Temp, col = "Diode_Temp", remove = FALSE) |>
+  ggplot(aes(x = i_seq, y = v_seq, color = factor(Temp), linetype = Diode, group = Diode_Temp)) +
+  geom_line() +
+  labs(y = TeX(r"($V_D$ (V))"),
+       x = TeX(r"($I_D$ (A))"),
+       title = "V-I characteristics for increasing circuit temperatures in SPICE",
+       color = TeX(r"(Temp ($^\circ$C))"))
+```
+
+```{r}
+# calculate the voltage slope versus temperature within
+#  Diode x i_seq
+dat_del_temp |>
+  dplyr::select(-data) |>
+  tidyr::unnest(y) |>
+  tidyr::nest(c(Temp, v_seq)) |>
+  dplyr::mutate(dV_dT = purrr::map_dbl(
+    data, \(x) lm(v_seq ~ Temp, data = x)$coef[["Temp"]]
+  )) |>
+  ggplot(aes(x = i_seq, y = 1000*dV_dT, color = Diode)) +
+  geom_line() +
+  labs(y = TeX(r"($\Delta V/\Delta T$ (mV/deg.))"),
+       x = TeX(r"($I_D$ (A))"),
+       title = "Voltage change per degree for these diodes vs. current",
+       subtitle = "Based on SPICE simulations")
+```
+
+The voltage sensitivity with temperature seems to increase
+with diode current. The slopes are similar between diodes,
+about $-1.2$ mV/degree for the 1N34A and $-1.4$ mV/degree for the 1N4148.

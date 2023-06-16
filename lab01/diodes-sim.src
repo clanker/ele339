@@ -1,0 +1,25 @@
+* Simulate Lab 1 Diodes using diodes.com SPICE models
+
+* Include Model Files --------------
+.include /Users/corylanker/Documents/MacSpice/models/diodes.spice.txt
+
+* Nodes ----------------------------
+Vin in 0 dc
+DSi in si 1N4148
+VSi si 0 dc 0
+Dge in ge 1N34A
+Vge ge 0 dc 0
+
+* Options --------------------------
+*.ic v(in)=0.61 v(dp)=0.6
+.options temp=77
+
+* Control --------------------------
+.control
+dc Vin 0 1 0.02
+print i(VSi) i(VGe)
+*plot i(VSi) i(VGe)
+.endc
+
+.end
+
