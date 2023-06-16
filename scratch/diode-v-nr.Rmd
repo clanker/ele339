@@ -1,0 +1,133 @@
+---
+title: "Alternate diode voltage search method using Newton-Raphson"
+author: "Cory Lanker"
+date: "2023-06-14"
+output:
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, fig.height = 3, fig.width = 5, fig.align = 'center')
+library(ggplot2)
+library(latex2exp)
+```
+
+## Introduction
+
+Calculating the diode voltage is difficult in even a simple circuit 
+consisting of a voltage source of $1.45$ V, 
+a resistor of `r round(1e3*7.25*10.25/17.5, 1)` $\Omega$, 
+and diode with $I_S = 2$ fA. The diode current is
+$I_D = I_S\, e^{V_D/V_T}$ and is equal to the current through the resistor $(V_x - V_D)/R$.
+
+## Methods
+
+### Solution 1 with exponential term for $V_D$
+
+Newton-Raphson can solve for the unknown $V_D$ when setting these terms equal.
+The difference between these terms is zero and provides the function to 
+solve
+$$f(V_D) = I_S\, e^{V_D/V_T} - \tfrac 1 R (V_x - V_D),$$ 
+with derivative
+$$ f'(V_D) = \tfrac {I_S} {V_T} e^{V_D/V_T} + \tfrac 1 R.$$
+
+### Solution 2 after taking logarithm
+
+An interesting alternative
+solution that converges much quicker is taking the log of the terms to derive 
+the solving function $g(V_D)$ as follows:
+$$I_S\, e^{V_D/V_T} = \tfrac 1 R (V_x - V_D)$$
+$$log(I_S) + \tfrac 1 {V_T} V_D = log(V_x - V_D) - log(R),$$
+leading to
+$$g(V_D) = log(V_x - V_D) - \tfrac 1 {V_T} V_D - log(I_S\, R)$$
+and corresponding derivative
+$$g'(V_D) = - \frac {1} {V_x - V_D} - \frac 1 {V_T}.$$
+
+```{r solve-f}
+Rth <- 1e3*7.25*10.25/17.5
+my.f <- function(x, V, R, Is) { x/R - V/R + Is*exp(x/0.026) }
+my.fp <- function(x, R, Is) { 1/R + Is/0.026*exp(x/0.026) }
+solve.f <- function(x = 0.7) {
+  val.f <- my.f(x, V=1.45, R=Rth, Is=2e-15)
+  val.fp <- my.fp(x, R=Rth, Is=2e-15)
+  return(x - val.f/val.fp)
+}
+```
+
+
+```{r solve-g}
+my.g <- function(x, V, R, Is) { -log(V-x) + log(R*Is) + x/0.026 }
+my.gp <- function(x, V, R, Is) { 1/(V-x) + 1/0.026 }
+solve.g <- function(x = 0.7) {
+    val.g <- my.g(x, V=1.45, R=Rth, Is=2e-15)
+    val.gp <- my.gp(x, V=1.45, R=Rth, Is=2e-15)
+    return(x - val.g/val.gp)
+}
+```
+
+## Results
+
+Comparing the first iteration $V_D$ values based on the initial guess $V_{D,0}$,
+noting that $V_D$ is $0.65676$.
+
+```{r results}
+dat <- tibble::tibble(Vd_0 = seq(0.5, 0.8, 0.001)) |>
+  dplyr::mutate("Solving f" = purrr::map_dbl(Vd_0, solve.f),
+                "Solving g" = purrr::map_dbl(Vd_0, solve.g))
+
+dat |>
+  tidyr::pivot_longer(cols = 2:3, names_to = "equation", values_to = "Vd_1") |>
+  ggplot(aes(x = Vd_0, y = Vd_1, color = equation)) +
+  geom_line() +
+  theme(legend.position = "top") +
+  scale_y_continuous(limits = c(0.65, 0.85)) +
+  labs(x = TeX(r'(Initial guess for $V_D (V_{D,0})$)'),
+       y = TeX(r'($V_{D,1}$ (after one iteration))'),
+       title = "Showing the single iteration Newton-Raphson results")
+```
+
+A zoom-in on the solution with $g(V_D)$ shows how accurate a single iteration
+is for the logarithm method.
+
+```{r results-zoom}
+dat |>
+  tidyr::pivot_longer(cols = 2:3, names_to = "equation", values_to = "Vd_1") |>
+  ggplot(aes(x = Vd_0, y = Vd_1, color = equation)) +
+  geom_line() +
+  theme(legend.position = "top") +
+  scale_y_continuous(limits = c(0.6565, 0.658)) +
+  labs(x = TeX(r'(Initial guess for $V_D (V_{D,0})$)'),
+       y = TeX(r'($V_{D,1}$ (after one iteration))'),
+       subtitle = TeX(r'(Zoom in around correct $V_D = 0.65676$)'))
+
+#gridExtra::grid.arrange(p1, p2, nrow = 2)
+```
+
+## Discussion
+
+The Newton-Raphson algorithm converges much quicker if the derivative equation $f'(V_D)$
+changes less over the range of $V_D$. E.g., an equation $f(V_D)$ with constant derivative
+(i.e., linear function) would get an exact solution after one iteration.
+Therefore the less the derivative $f'(V_D)$ changes versus $V_D$,
+the quicker the convergence.
+
+Here is a plot of the derivatives $f'(V_D)$ and $g'(V_D)$ over the range of $V_D$.
+
+```{r discussion}
+dat <- tibble::tibble(Vd_0 = seq(0.5, 0.8, 0.001)) |>
+  dplyr::mutate("f'(V_D)" = purrr::map_dbl(Vd_0, my.fp, R=Rth, Is=2e-15),
+                "g'(V_D)/20" = purrr::map_dbl(Vd_0, my.gp, V=1.45, R=Rth, Is=2e-15)/20)
+
+dat |>
+  tidyr::pivot_longer(cols = 2:3, names_to = "equation", values_to = "Vd_1") |>
+  ggplot(aes(x = Vd_0, y = Vd_1, color = equation)) +
+  geom_line() +
+  theme(legend.position = "top") +
+  #scale_y_continuous(limits = c(0.65, 0.85)) +
+  labs(x = TeX(r'($V_D$)'),
+       y = TeX(r'(Derivative of function of $V_D$)'),
+       title = "Showing the derivative of the solving functions")
+```
+
+As the derivative changes less drastically with $g(V_D)$, its solutions converge much quicker.
+
