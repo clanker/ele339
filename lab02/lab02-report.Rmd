@@ -1,0 +1,134 @@
+---
+title: "Lab 2 Report"
+author: "Cory Lanker"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.height = 3.25, fig.width = 6.5, fig.align = 'center')
+library(ggplot2)
+library(latex2exp)
+```
+
+## Introduction
+
+This lab explores basic diode circuits, culminating in
+the two op-amp full-wave rectifier.
+Extensive SPICE simulations supplement lab measurements.
+
+## Figure 1 diode circuits
+
+Here are commentaries and SPICE simulations for the three circuits
+of Figure 1.
+
+### Figure 1a: capped rectifier
+
+A rectifier. My measurements were 7.55 V, meaning I need a better
+op-amp to amplify my AFG output. SPICE simulation shown below in Figure \ref{fig:p1a}.
+The diode passes current through to the capacitor and prevents
+(essentially due to the reverse current so negligibly small)
+the charge from draining. The output should be constant (within fractions
+of a percent) about the value where the following equal:
+
+1. charge lost from the capacitor
+  a. leakage current within capacitor during 1 cycle
+  b. reverse current through diode when its voltage is negative (likely dominated by the capacitor leakage current)
+2. charge gained from the capacitor
+  a. diode current due to a positive voltage difference (though only a small portion of the cycle when that occurs)
+  
+It would be interesting to explore these idea further when precise
+measurement equipment.
+
+![Figure 1a circuit response. V(in, Id) is the voltage across diode, noting its small positive cycle.](p1a.pdf){#fig:p1a width=600 height=300}
+
+### Figure 1b: signal shifter
+
+This circuit demonstrates that voltage is potential. As the voltage increases to $V_{D, on}$ (turning on the diode) there is no current flow, so the capacitor voltage must be zero. When node `out` achieves a voltage sufficient to start current flow in the diode (at 10 $\mu$s), then the capacitor voltage increases according to the integral of current. Current flow stops at about 0.25 ms. See SPICE output in Figure \ref{fig:p1b}
+
+![Figure 1b circuit response. A load of 220 $\Omega$ is connected at 2 ms. V(in, out) is the voltage across the capacitor. I show the two branch currents: the diode current in cyan and the load current in magenta.](p1b_220.pdf){#fig:p1b width=600 height=300}
+
+Once the capacitor is charged, there is no way for it to lose charge as the diode prevents its discharge cycle when the voltage decreases. Therefore this circuit is a voltage shift of the input waveform. 
+
+A resistive load completely changes this circuit as shown in the figure. Now the `out` node an lose its charge. I found a resistance of 10 k$\Omega$ didn't demonstrate the discharge behavior well enough so used a 220 $\Omega$ resistor. The resistor current is proportional to the $V_{out}$, so primarily current flows from ground to the `out` node. The diode activates to prevent `out` from exceeding 0.7 V, restoring the voltage shift.
+
+It's also worthy to note what happens with the diode is flipped so current flows to the `out` node. See the following SPICE output in Figure \ref{fig:p1b2}. Now the voltage shift is positive between `out` and `in` as diode creates positive potential on the `out` node due to positive capacitor voltage. Nothing happens in the first half-cycle (0.5 ms) as the diode is off (except for the tiny reverse current) so there is no capacitor voltage.
+
+![Figure 1b circuit response when diode is flipped. V(in, Id) is the voltage across the capacitor.](p1b_mod_all.pdf){#fig:p1b2 width=600 height=300}
+
+A very interesting circuit with plenty to explore!
+
+### Figure 1c: voltage doubler
+
+Putting these circuits together results in a voltage doubling circuit.
+The second circuit (1b, with diode inverted) acts as a voltage shifter but
+we demonstrated can't hold voltage with a load.
+This problem is corrected by appending the first circuit that feeds
+charge/voltage to the `out` node and is stored on the capacitor for use by the load.
+Appropriate selection of capacitor sizes is required based on
+the resistance of the load.
+
+From the SPICE output in Figure \ref{fig:p1c}, the 10 k$\Omega$ load (connected
+at 20 ms) causes a voltage reduction at `out` along with an unsteady
+level.
+
+![Figure 1c circuit response. V(in, Id) is the voltage across the capacitor. A 10 k$\Omega$ load is connected at 20 ms caused the output node to drain its potential.](p1c.pdf){#fig:p1c width=600 height=300}
+
+
+## Figure 2 diode clipping circuits
+
+These circuits aren't interesting as their behavior is the same and obvious. SPICE output is provided in Figure \ref{fig:p2c} for the last circuit without commentary, other than 
+stating that the order of Zener diodes doesn't matter (confirmed by SPICE, too).
+
+![Figure 2c circuit response. The current flows through the Zener diodes when the absolute value of the voltage potential across the two diodes exceeds $V_{D, on} + V_{Breakdown}$. A 10 k$\Omega$ resistor is added after two cycles to see its effect on the circuit.](p2c.pdf){#fig:p2c width=600 height=300}
+
+## Figure 3 two op-amp full-wave rectifier
+
+Here is a fascinating circuit that takes forever to simulate in SPICE,
+likely because my op-amp subcircuit is too complicated. The SPICE output
+is given in Figure \ref{fig:p3}. My commentary follows.
+
+![Figure 3 circuit response. Node `in` is the source $V_S$. The `swon` node is a switch that attaches a 10 k$\Omega$ load. Node `n1` is the anode of the diode whose cathode is at $V_1$.](p3.pdf){#fig:p3 width=600 height=300}
+
+### First op-amp
+
+$V_1$ is $V_s$ inverted, but the diode (whose anode is $V_1$)
+prevents $V_1$ going above $V_{D, on}$. I'm not sure why $V_1$ achieves $-10.7 V$, possibly due to node `n1` needing a voltage of $-10 V$ when $V_S = 10 V$ because the
+op-amp inputs must be at zero potential due to the non-inverting input
+being connected to ground (using voltage division of the three nodes).
+$V_1$ cannot go above $V_{D, on}$ due to the diode whose anode is at $V_1$,
+so $V_1 = 0.7 V$ when $V_S$ is in its negative half-cycle.
+
+Node `n1` is as expected given voltage division using $V_S$ and $V_{opamp1,in-}$ when $V_S$ is in its positive half-cycle as the op-amp output is driven negative, turning on the `ni` diode.
+When this occurs the other diode connected to $V_1$ is off as the op-amp inputs are essentially at ground, so it's as if the opamp is connected at typical without the diodes. Node `n1`'s behavior changes when $V_S$
+is in its negative half-cycle and the voltage $V_1$ increases.
+Now the diode for node `n1` is off and all charge is shorted back to
+the op-amp inputs. (I'll wait to learn more about op-amps to study
+this behavior.) The result is that $V_1$ is stuck at 0.7 V. It's charge
+depletion to its own input node must be why $n1$ goes to 0 V at this point,
+but I'm sure.
+
+### Second op-amp
+
+Op-amp two is easier to understand as it's in a typical inverting
+amplifier mode. The capacitor at $V_out$ stabilizes the charge.
+We have to explore the inverting input to the op-amp though.
+The inverting input is going to be one-third of the potential between
+`n1` (which is always 0 when $V_S$ is negative and is $-V_S$ when $V_S$ is negative. So this means the inverting input is same during each of the
+half-cycles and wants to achieve the following potential:
+
+$$ - \tfrac {10} 3 |sin(wt)|$$
+
+The input nodes are kept near zero due to the non-inverting input at
+ground, so this is input signal that is amplified. I think
+the circuit as presented is wrong, as the thinking was that the op-amp's input
+resistance would be a Thevenin equivalent of $\tfrac 1 3 R$.
+I don't think that is correct as the resistor between the inverting input
+and $V_S$ sets voltage but doesn't factor in to the resistance
+for the op-amp amplification. I think the input resistance is still
+$\tfrac 1 2 R$ so accordingly I increased the other op-amp resistor to $\tfrac 3 2 R$
+to achieve the needed 3x amplification. My modification does
+achieve close to $10 V$ rectification, see Figure \ref{fig:p3mod}.
+
+![Figure 3 circuit modification. Increasing the second opamp output-connecting resistor to $\tfrac 3 2 R$ boosts the rectified voltage to 10 V.](p3mod.pdf){#fig:p3mod width=600 height=300}
+

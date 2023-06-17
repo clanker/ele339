@@ -1,0 +1,36 @@
+* Simulate Lab 2 Diodes using diodes.com SPICE models
+
+* Include Model Files --------------
+.include /Users/corylanker/Documents/MacSpice/models/diodes.spice.txt
+
+* Nodes ----------------------------
+Vin in 0 SIN(0 10 1k)
+C1 in out 1u
+*D1 in Id 1N4148
+* original
+D1 out ID 1N4148
+V:D Id 0 dc 0
+* modified
+*D1 0 out 1N4148
+*C1 out 0 1uF
+S1 out l swon 0
+Rl l RL 220
+V:RL RL 0 dc 0
+
+* Pulse that is off for 2ms, then on for 2ms
+Vsw swon 0 PULSE(-1 1 2m 1u 1u 9999u 1999u)
+
+* Options --------------------------
+*.ic v(in)=0.61 v(dp)=0.6
+.options temp=27
+
+* Control --------------------------
+.control
+tran 1u 4m 0 5u
+*print i(VId)
+plot V(in) V(in, out) V(out) 50*V:D#branch 50*V:RL#branch
+
+.endc
+
+.end
+
