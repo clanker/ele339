@@ -1,5 +1,11 @@
 * Design an AFG with UA741 Op-Amp
 
+* Development ideas, 17 JUN 2023
+* Look at the PDF output for the e9ec993 commit
+* The node `8` output is fairly sinusoidal ... why not simplify the downstairs circuit
+*   and pass this through an amp and a minor smoother (if something like that exists?)
+*
+
 * Include Model Files --------------
 .include /Users/corylanker/Documents/LTspice/ele339/models/diodes.spice.txt
 .include /Users/corylanker/Documents/LTspice/ele339/models/ad745.cir
