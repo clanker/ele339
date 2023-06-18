@@ -1,0 +1,49 @@
+* Design an AFG with UA741 Op-Amp
+
+* Include Model Files --------------
+.include /Users/corylanker/Documents/LTspice/ele339/models/diodes.spice.txt
+.include /Users/corylanker/Documents/LTspice/ele339/models/ad745.cir
+.include /Users/corylanker/Documents/LTspice/ele339/models/ua741.cir
+
+* Nodes ----------------------------
+Vcc vcc 0 dc 15
+Vee vee 0 dc -15
+
+X1 2 3 vcc vee out UA741
+R0 3 0 10k
+R1 2 8 10k
+R2 2 out 470k
+R3 8 0 1.0k
+R4 9 0 2.5k
+R5 10 0 2.5k
+R9 14 0 1.0k
+
+C1 8 9 47n
+C2 9 10 100n
+C4 10 14 100n
+C7 14 out 47n
+
+Cin 8 0 10n
+Cin2 9 0 10n
+*Lin 9 10 100p
+*Lout 10 14 100p
+Cin3 10 0 10n
+Cout 14 0 10n
+
+* Pulse that is off for 2ms, then on for 2ms
+*Vsw swon 0 PULSE(-1 1 1000 1u 1u 4999u 4999u)
+
+* Options --------------------------
+*.ic v(in)=0.61 v(dp)=0.6
+.options temp=27 
+*vntol=2.5m reltol=0.005 abstol=25p
+
+* Control --------------------------
+.control
+tran 10n 1m 0 20n
+*print i(VId)
+plot V(out) V(2) V(8) V(9) V(10) V(14)
+.endc
+
+.end
+
