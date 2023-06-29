@@ -19,6 +19,93 @@ See Figure \ref{fig:p3mod} below.
 
 ## Introduction
 
+This lab explores the small-signal equivalent circuit for a diode
+and results in discovery of the emission coefficient.
+The emission coefficient, $n_F$, is a factor included in the
+denominator of the diode current vs. voltage equation:
 
-## 
+$$ I_D = I_S \exp\left(\frac {V_D} {n_F\, V_T}\right)$$
+
+Some research guided me to typical $n_F$ values, between 1 and 2. 
+For IC diodes, $n_F$ is closer to 1, while
+with the discrete diodes used in the lab $n_F$ is closer to 2.
+I'll show that the emission coefficient is important to make
+the small-signal theory align with the measurements.
+
+## Setup
+
+I have a square wave generator producing a DC offset $V_{S}$ and
+an AC signal $v_s$. This generator feeds a series combination
+of a resistor of measured resistance $98.5 \Omega$ and 8 1N4148
+fast-switching diodes. The 1N4148 diode is similar to the requested
+1N914 diode. I use eight diodes so I can have a larger AC
+signal and still have the small-signal model be valid.
+The small-signal model is
+
+$$I_d = I_S \exp\left( \frac{V_D + v_d} {n_F\, V_T} \right)
+= I_S \exp\left( \frac{V_D} {n_F\, V_T} \right)
+\exp\left( \frac{v_d} {n_F\, V_T} \right)
+$$
+$$\approx
+I_S \exp\left( \frac{V_D} {n_F\, V_T} \right)
+\left(1 + \frac{v_d} {n_F\, V_T} \right)$$
+
+where the last approximation is due to the Taylor series expansion
+of $exp(x) \approx 1 + x$ when $0 < x << 1$ meaning $v_d$ (the AC signal) magnitude should be much less than 50 mV (since $n_F=2$).
+
+## Measurements
+
+The AC signal measured was the amplitude of the 1kHz square wave about its
+DC signal (given in mV in the table). All measurements performed with a
+Fluke 175 multimeter. The following table shows the
+measurements:
+
+* `V_in_mV`: the DC signal magnitude at node `in`, in mV
+* `V_out_mV`: the DC signal magnitude at node `out`, in mV
+* `V_in_ac`: the AC signal amplitude (about the DC signal) at node `in`, in mV
+* `V_out_ac`: the AC signal amplitude (about the DC signal) at node `out`, in mV
+* `I_d_mA`: the current through the eight series diodes, in mA
+* `r_pi`: $\frac{n_F\, V_T} {I_D}$, the theoretical $r_\pi$ per diode using $n_F = 2$
+* `p_obs`: observed voltage drop proportion for the eight diodes
+* `r_est`: observed $r_\pi = \tfrac R 8 \tfrac p {1-p}$ as calculated from the voltage drop proportion $p$
+* `obs_err`: percent error in observed $r_\pi$ vs. theoretical values
+
+```{r read-in-data}
+R_S <- 98.5
+dat <- readr::read_csv("diode-ac-meas.csv") |>
+  dplyr::mutate(
+    I_d_mA = (V_in_mV - V_out_mV)/R_S,
+    r_pi = 2 * 26 / I_d_mA,
+    p_obs = V_out_ac/V_in_ac,
+    r_est = p_obs / (1-p_obs) * R_S / 8,
+    obs_err = (r_est - r_pi)/r_est
+  )
+column_names <- names(dat)
+gt::gt(dat) |> 
+  gt::fmt_number(columns = column_names[3:8], n_sigfig = 3) |>
+  gt::fmt_percent(columns = "obs_err", decimals = 1)
+```
+
+Figure \ref{fig:plot} shows that the error is related to the diode current.
+It is interesting that a fit line passes close to zero error when the current
+goes to zero.
+
+```{r plot, fig.cap = "Estimated small-signal resistance errors."}
+dat |>
+  ggplot(aes(x = I_d_mA, y = 100*obs_err)) +
+  geom_point() +
+  stat_smooth(method = 'lm', fullrange = TRUE) +
+  scale_x_continuous(limits = c(0, 7)) +
+  labs(x = "Diode current (mA)",
+       y = latex2exp::TeX(r"(Observed error in $r_\pi$ (%))"))
+```
+
+## Discussion
+
+An emission coefficient of 2 is appropriate for these diodes.
+And it seems that the theoretical $r_\pi$ calculation is
+valid for small diode currents. With higher diode currents
+there appears to be an increase in the diode's small-signal resistance.
+
+
 
