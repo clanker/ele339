@@ -1,0 +1,134 @@
+---
+title: "Lab 5: CE Amplifier Gain with Emitter Degeneration"
+subtitle: "Proper calculation for base width modulation"
+author: "Cory Lanker"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.height = 3.25, fig.width = 6.5, fig.align = 'center')
+library(ggplot2)
+library(latex2exp)
+```
+
+<!--
+See Figure \ref{fig:p3mod} below.
+
+![Figure caption.](p3mod.pdf){#fig:p3mod width=600 height=300}
+-->
+
+## Introduction
+
+This lab summarizes my own investigation of the voltage gain
+$v_{out}/v_{in}$ for the Common Emitter amplifier with a finite
+Early voltage. This research sprung from my attempt to solve question
+4 of Homework 6 when accounting for base width modulation.
+
+I knew that $r_o$ inclusion was not required but I wanted to solve
+for the gain anyway. Even despite the warning from
+Sedra and Smith who advise to ignore $r_o$ in the small-signal model:
+"[...] note that we have not included $r_o$, 
+because it would complicate the analysis
+significantly, which is not worth the trouble, given that $r_o$ has little
+effect on the performance of discrete-circuit amplifiers." (p. 467, 8th ed.)
+
+A search for the gain found only this equation for the voltage gain,
+
+$$ \frac{v_{out}}{v_{in}} \approx - \frac {g_m \big( R_C \,\Vert\, r_o(1+g_m R_E)\big)}
+{1+g_m R_E},$$
+
+(see [MIT Course link, slide 19](http://web.mit.edu/6.012/FALL00/www/handouts/lec19.pdf)
+and another YouTube video with the same result)
+but as I'll show this equation isn't exactly correct. 
+The derivation on YouTube neglects the base current's
+contribution to the voltage of the emitter resistor twice,
+and this simplification can lead to significant errors
+when either $\frac {R_E}{r_\pi}$ or $\frac{R_E}{\beta}{r_o}$
+is not negligibly small. I confirmed that adding the missing 
+emitter voltage contribution yields the same equation that I
+derive in this report.
+
+This report has three sections. 
+In the first section, I derive $A_v$
+for a CE amplifier with emitter degeneration and base width modulation
+effects under a typical four resistor biasing scheme.
+In the second section,
+I present a summary 
+for these CE amplifiers as they grow in
+complexity:
+
+1. CE amplifier without $R_E$ or base width modulation,
+2. CE amplifier with base width modulation ($V_A < \infty$),
+3. CE amplifier with emitter degeneration ($V_A = \infty$),
+4. CE amplifier with emitter degeneration and base width modulation.
+
+The third section presents comprehensive LTspice simulations
+that confirm the derivations. 
+
+# Voltage gain for the CE amplifier with emitter degeneration and $V_A < \infty$
+
+Here is a schematic of the amplifier under consideration (DC then AC):
+
+$\hspace{1.5in}$
+![](ce_degen_bwm.png){width=60%}
+
+$\hspace{1.5in}$
+![](ce_degen_ac.png){width=60%}
+
+
+There are two important equations to derive the voltage gain.
+The first is KCL at the emitter node using the collector current through
+$R_C$:
+
+$$v_{in} = v_\pi + \left( 
+\frac{v_\pi}{r_\pi} - \frac{v_o}{R_C}
+\right) R_E$$
+
+After a Thevenin transform of the VCCS to a VCVS
+(with voltage $-g_m r_o v_\pi$ and resistance $r_o$),
+KVL yields:
+$$v_o + g_m r_o v_\pi = -\frac{v_o}{R_C} r_o + \left( 
+\frac{v_\pi}{r_\pi} - \frac{v_o}{R_C}
+\right) R_E,$$
+
+noting that on RHS the first term is the $r_o$ voltage using collector current
+and the second term is the same $R_E$ voltage used in the first equation.
+Here is a schematic of the KVL loop using the Thevenin source:
+
+$\hspace{1.75in}$
+![](ce_thevenin.png){width=50%}
+
+The first equation yields this substitution for $v_pi$:
+
+$$v_\pi = \left(v_i + \tfrac{R_E}{R_C} v_o\right) \tfrac{r_\pi}{r_\pi + R_E}$$
+After substituting $v_\pi$ and some reduction, the voltage gain becomes
+
+$$\frac{v_o}{v_i} = \frac{-R_C (\beta r_o - R_E)}{
+r_\pi(r_o+R_C+R_E) +R_C R_E + (\beta+1)r_o R_E
+}$$
+
+# Summary of CE properties
+
+| $R_E$ | $r_o$ | $A_v$ | 
+|:-|:-|:------:|
+| $0$ | $\infty$ |$-\frac{\beta R_c}{r_\pi}$|
+||||
+| $R_E$ | $\infty$ |$-\frac{\beta R_c}{r_\pi + (\beta+1) R_E}$|
+||||
+| $0$ | $r_o$ |$-\frac{\beta R_c}{r_\pi \big(1 + \tfrac{R_c}{r_o}\big)}$|
+||||
+| $R_E$ | $r_o$ |$-\frac{\big(\beta-\tfrac{R_E}{r_o}\big) R_c}{r_\pi \big(1 + \tfrac{R_c}{r_o}\big) + R_E \tfrac{r_\pi+R_C}{r_o}+(\beta+1) R_E}$|
+
+| resistance | value as function of $R_E$ and $r_o$ |
+|:--------:|:---------------------------------------|
+|$R_{in}$| $R_1\| R_2 \| \Big\{\frac{r_\pi + (\beta+1)R_E + \tfrac 1 {r_o} (r_\pi R_C + r_\pi R_E + R_C R_E)}{1 + \tfrac 1 {r_o} (R_C+R_E)}\Big\}$|
+|||
+|$R_{out}$| $R_C \| \Big\{ r_o \frac{r_\pi+R_B+(\beta+1)R_E}{r_\pi+R_B+R_E} + (r_\pi + R_B)\|R_E \Big\}$|
+
+
+
+
+
+
+
