@@ -110,6 +110,7 @@ r_\pi(r_o+R_C+R_E) +R_C R_E + (\beta+1)r_o R_E
 
 # Summary of CE properties
 
+<div style="width:400px">
 | $R_E$ | $r_o$ | $A_v$ | 
 |:-|:-|:------:|
 | $0$ | $\infty$ |$-\frac{\beta R_c}{r_\pi}$|
@@ -119,6 +120,7 @@ r_\pi(r_o+R_C+R_E) +R_C R_E + (\beta+1)r_o R_E
 | $0$ | $r_o$ |$-\frac{\beta R_c}{r_\pi \big(1 + \tfrac{R_c}{r_o}\big)}$|
 ||||
 | $R_E$ | $r_o$ |$-\frac{\big(\beta-\tfrac{R_E}{r_o}\big) R_c}{r_\pi \big(1 + \tfrac{R_c}{r_o}\big) + R_E \tfrac{r_\pi+R_C}{r_o}+(\beta+1) R_E}$|
+</div>
 
 | resistance | value as function of $R_E$ and $r_o$ |
 |:--------:|:---------------------------------------|
