@@ -1,5 +1,5 @@
 ---
-title: "Lab 4 Report"
+title: "Lab 6 Report: Common Emitter Amplifier"
 author: "Cory Lanker"
 date: "`r Sys.Date()`"
 output: pdf_document
@@ -17,9 +17,44 @@ See Figure \ref{fig:p3mod} below.
 ![Figure caption.](p3mod.pdf){#fig:p3mod width=600 height=300}
 -->
 
-## Introduction
+# Introduction
 
-This lab introduces the BJT. Tasks in this lab are:
+This lab sets the operating point the BJT in a common emitter amplifier using
+the two typical biasing schemes:
+
+1. four-resistor, single-supply topology
+2. three-resistor, dual-supply topology
+
+# Four-resistor, single-supply biasing
+
+## Design Procedure
+
+Here are the calculated values for this biasing topology:
+
+
+## Measurements
+
+When prototyping this bias scheme, here are the measured values:
+
+## LTspice simulations
+
+
+# Three-resistor, dual-supply biasing
+
+## Design Procedure
+
+Here are the calculated values for this biasing topology:
+
+
+## Measurements
+
+When prototyping this bias scheme, here are the measured values:
+
+## LTspice simulations
+
+
+
+
 
 1. Simulate $I_C$ vs. $V_{CE}$ in LTspice using different base currents
 2. Build a BJT circuit to plot observed $I_C$ vs. $V_{CE}$ for

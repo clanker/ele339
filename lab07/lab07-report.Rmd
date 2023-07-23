@@ -1,5 +1,5 @@
 ---
-title: "Lab 4 Report"
+title: "Lab 7 Report: Common Collection Amplifier"
 author: "Cory Lanker"
 date: "`r Sys.Date()`"
 output: pdf_document
@@ -17,20 +17,28 @@ See Figure \ref{fig:p3mod} below.
 ![Figure caption.](p3mod.pdf){#fig:p3mod width=600 height=300}
 -->
 
-## Introduction
+# Introduction
 
-This lab introduces the BJT. Tasks in this lab are:
+This lab sets the operating point the BJT in a common collector amplifier
+and then measures prototype values. LTspice simulations confirm
+the DC operating point.
 
-1. Simulate $I_C$ vs. $V_{CE}$ in LTspice using different base currents
-2. Build a BJT circuit to plot observed $I_C$ vs. $V_{CE}$ for
-different base currents
-3. Show the current gain at $V_{CE} = 5V$ vs. $I_C$
-4. Estimate the Early voltage for each base current observation
-5. Estimate the empirical emission coefficient $n_F$
-6. Estimate the reverse saturation current $I_S$
-7. Compare the calculations for Parts 3-6 with the manufacturer's specifications
-8. Discuss the pros and cons of assuming $V_{BE} = 0.7V$ for the forward
-active BJT in circuit analysis.
+# Design Procedure
+
+Here are the calculated values for this biasing topology:
+
+
+# LTspice simulations
+
+
+# Measurements
+
+When prototyping this bias scheme, here are the measured values:
+
+
+## Output waveform being sinusoidal
+
+
 
 
 
