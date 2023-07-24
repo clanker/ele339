@@ -1,0 +1,39 @@
+Circuit: * /Users/corylanker/Documents/LTspice/ele339/lab04/bjt-vce-sweep.asc
+
+Warning: Multiple definitions of model "2scr375p" Type: BJT
+Warning: Multiple definitions of model "bc857b" Type: BJT
+Warning: Multiple definitions of model "bc847c" Type: BJT
+Warning: Multiple definitions of model "bc847b" Type: BJT
+.step i1=2e-06
+.step i1=4e-06
+.step i1=6e-06
+.step i1=8e-06
+.step i1=1e-05
+
+
+Measurement: ic
+  step	ic(q1)	at
+     1	0.000601247	1
+     2	0.00120049	1
+     3	0.00179787	1
+     4	0.00239345	1
+     5	0.00298724	1
+
+
+Date: Sun Jul 23 12:26:14 2023
+Total elapsed time: 0.160 seconds.
+
+tnom = 27
+temp = 27
+method = trap
+totiter = 2067
+traniter = 0
+tranpoints = 0
+accept = 0
+rejected = 0
+matrix size = 6
+fillins = 0
+solver = Normal
+Avg thread counts: 1.6/0.0/2.2/1.6
+Matrix Compiler1:      20 opcodes  0.3/[0.3]/0.3
+Matrix Compiler2: off
