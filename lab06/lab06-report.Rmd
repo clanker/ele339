@@ -29,137 +29,106 @@ the two typical biasing schemes:
 
 ## Design Procedure
 
+First, I set $I_C = 5$ mA as this amplifier is for voltage gain,
+using a second stage for current gain. (See Lab 7.) A larger collector
+current will increase the transconductance and boost the voltage gain,
+so I keep the current as large as I can given the power specs
+(to be calculated later). --Actually, a reason to keep current low is to increase $1/g_m$ to keep the emitter capacitor small because audio
+frequencies of 20Hz have large impedance at that $f$.
+
+Next, I decide the input voltage swing should accommodate $\pm 10$ mV.
+I desire a large voltage gain, with the understanding that I will
+put a capacitor across the emitter resistance in order to achieve
+maximum gain. A gain of over 500 is the design goal for this stage.
+For such a gain, we need at least 5.3V headroom for $V_{CE}$ to
+avoid saturation, noting the extra 0.3V is to ensure $V_{BC} < 0.4V$
+and remains in forward active or soft saturation.
+
+Once the emitter resistor is shorted at operation frequencies,
+the gain becomes $g_m R_C = I_C R_C / V_T$. To get a gain of 500,
+we will need 13V, and if there is the same $n_F$ coefficient from
+Lab 4, then we'll need an extra 30%. 
+So I will design for 18V across $R_C$.
+
+The voltage supply is high but manageable. The voltage across
+the emitter resistor should match $V_{CE}$, and though
+I think that is a large voltage for emitter degeneration, I'll use it.
+The voltage supply is $5V + 5.3V + 18V = 28.3V$. To ensure enough
+headroom, I use $V_{CC} = 30V$.
+
+At $\beta = 100$ (much lower $\beta$ when $I_C < 1mA$), 
+the base current is approximately $5\ \mu$A.
+Using $I_1 > 20 I_B$, I set the biasing resistor
+current to $0.16$ mA.
+The base voltage is $5V + 0.7V$ so the voltage drops are 
+$28.3-5.7$V across $R_1$ and $5.7V$ across $R_2$.
+
 Here are the calculated values for this biasing topology:
 
+* $R_E = 5V / 0.5mA = 10k\Omega$
+* $R_C = 18V / 0.5mA = 36k\Omega$
+* $R_1 = 22.6V / 0.16mA = 140k \Omega$
+* $R_2 \approx 5.7V / 0.16mA = 35k \Omega$
+
+Here is the LTspice schematic of the circuit I simulated
+with the operating voltages and graphs of $500 \times\,v_{in}$
+and $v_{out}$:
+
+![](lt4res.png)
 
 ## Measurements
 
-When prototyping this bias scheme, here are the measured values:
+When prototyping this bias scheme, here are the measured values
+using four different types of \emph{npn} transistors.
+This table includes the
+operating point currents from the LTspice simulation
+using the 2N3904 transistor.
 
-## LTspice simulations
 
+```{r read-in-data}
+dat <- readxl::read_xlsx("meas.xlsx")
+column_names <- names(dat)
+gt::gt(dat |>
+         dplyr::select_at(1:8)) |> 
+  gt::fmt_number(columns = column_names[c(2,3)], decimals = 0) |>
+  gt::fmt_number(columns = column_names[c(4)], decimals = 1) |>
+  gt::fmt_number(columns = column_names[5:8], decimals = 2)
+```
+
+
+And with currents estimated from the node voltages and 
+resistance values:
+```{r read-in-data-2}
+gt::gt(dat |>
+         dplyr::mutate(
+           `Ib_est (uA)` = 0.5*(`Ib_est (uA)` + `Ie_est (uA)` - `Ic_est (uA)`)
+         ) |>
+         dplyr::select_at(c(1,2,9:12))) |> 
+  gt::fmt_number(columns = column_names[c(2,12)], decimals = 0) |>
+  gt::fmt_number(columns = column_names[c(9:11)], decimals = 1)
+#  gt::fmt_percent(columns = "obs_err", decimals = 1)
+```
+
+Of interest is that the estimated $\beta$ is fairly constant for
+all these different transistors. It seems $\beta$ is more
+dependent on $I_C$ that the model of transistor. I've recorded
+$\beta$ between 300 and 400 for the 2N3904 but that was with
+larger collector currents.
 
 # Three-resistor, dual-supply biasing
 
-## Design Procedure
-
-Here are the calculated values for this biasing topology:
-
-
-## Measurements
-
-When prototyping this bias scheme, here are the measured values:
+I use the same resistor values and set $R_B$ to the
+Thevenin resistance from above: $27.5 k\Omega$.
+I lower the rail voltages to $24.2 V$ and $-5.8 V$,
+an amount equal to $V_{Th}$, so
+the base source node is at ground potential.
 
 ## LTspice simulations
 
+Here is an LTspice simulation to confirm that the voltage drops
+and voltage gain are about the same as the four resistor biasing topology.
 
-
-
-
-1. Simulate $I_C$ vs. $V_{CE}$ in LTspice using different base currents
-2. Build a BJT circuit to plot observed $I_C$ vs. $V_{CE}$ for
-different base currents
-3. Show the current gain at $V_{CE} = 5V$ vs. $I_C$
-4. Estimate the Early voltage for each base current observation
-5. Estimate the empirical emission coefficient $n_F$
-6. Estimate the reverse saturation current $I_S$
-7. Compare the calculations for Parts 3-6 with the manufacturer's specifications
-8. Discuss the pros and cons of assuming $V_{BE} = 0.7V$ for the forward
-active BJT in circuit analysis.
-
-
-
-
-
-```{r spice-data}
-dat <- readr::read_delim("../ib_1u.txt", delim = " ")
-```
-
-The emission coefficient, $n_F$, is a factor included in the
-denominator of the diode current vs. voltage equation:
-
-$$ I_D = I_S \exp\left(\frac {V_D} {n_F\, V_T}\right)$$
-
-Some research guided me to typical $n_F$ values, between 1 and 2. 
-For IC diodes, $n_F$ is closer to 1, while
-with the discrete diodes used in the lab $n_F$ is closer to 2.
-I'll show that the emission coefficient is important to make
-the small-signal theory align with the measurements.
-
-## Setup
-
-I have a square wave generator producing a DC offset $V_{S}$ and
-an AC signal $v_s$. This generator feeds a series combination
-of a resistor of measured resistance $98.5 \Omega$ and 8 1N4148
-fast-switching diodes. The 1N4148 diode is similar to the requested
-1N914 diode. I use eight diodes so I can have a larger AC
-signal and still have the small-signal model be valid.
-The small-signal model is
-
-$$I_d = I_S \exp\left( \frac{V_D + v_d} {n_F\, V_T} \right)
-= I_S \exp\left( \frac{V_D} {n_F\, V_T} \right)
-\exp\left( \frac{v_d} {n_F\, V_T} \right)
-$$
-$$\approx
-I_S \exp\left( \frac{V_D} {n_F\, V_T} \right)
-\left(1 + \frac{v_d} {n_F\, V_T} \right)$$
-
-where the last approximation is due to the Taylor series expansion
-of $exp(x) \approx 1 + x$ when $0 < x << 1$ meaning $v_d$ (the AC signal) magnitude should be much less than 50 mV (since $n_F=2$).
-
-## Measurements
-
-The AC signal measured was the amplitude of the 1kHz square wave about its
-DC signal (given in mV in the table). All measurements performed with a
-Fluke 175 multimeter. The following table shows the
-measurements:
-
-* `V_in_mV`: the DC signal magnitude at node `in`, in mV
-* `V_out_mV`: the DC signal magnitude at node `out`, in mV
-* `V_in_ac`: the AC signal amplitude (about the DC signal) at node `in`, in mV
-* `V_out_ac`: the AC signal amplitude (about the DC signal) at node `out`, in mV
-* `I_d_mA`: the current through the eight series diodes, in mA
-* `r_pi`: $\frac{n_F\, V_T} {I_D}$, the theoretical $r_\pi$ per diode using $n_F = 2$
-* `p_obs`: observed voltage drop proportion for the eight diodes
-* `r_est`: observed $r_\pi = \tfrac R 8 \tfrac p {1-p}$ as calculated from the voltage drop proportion $p$
-* `obs_err`: percent error in observed $r_\pi$ vs. theoretical values
-
-```{r read-in-data}
-R_S <- 98.5
-dat <- readr::read_csv("diode-ac-meas.csv") |>
-  dplyr::mutate(
-    I_d_mA = (V_in_mV - V_out_mV)/R_S,
-    r_pi = 2 * 26 / I_d_mA,
-    p_obs = V_out_ac/V_in_ac,
-    r_est = p_obs / (1-p_obs) * R_S / 8,
-    obs_err = (r_est - r_pi)/r_est
-  )
-column_names <- names(dat)
-gt::gt(dat) |> 
-  gt::fmt_number(columns = column_names[3:8], n_sigfig = 3) |>
-  gt::fmt_percent(columns = "obs_err", decimals = 1)
-```
-
-Figure \ref{fig:plot} shows that the error is related to the diode current.
-It is interesting that a fit line passes close to zero error when the current
-goes to zero.
-
-```{r plot, fig.cap = "Estimated small-signal resistance errors."}
-dat |>
-  ggplot(aes(x = I_d_mA, y = 100*obs_err)) +
-  geom_point() +
-  stat_smooth(method = 'lm', fullrange = TRUE) +
-  scale_x_continuous(limits = c(0, 7)) +
-  labs(x = "Diode current (mA)",
-       y = latex2exp::TeX(r"(Observed error in $r_\pi$ (%))"))
-```
-
-## Discussion
-
-An emission coefficient of 2 is appropriate for these diodes.
-And it seems that the theoretical $r_\pi$ calculation is
-valid for small diode currents. With higher diode currents
-there appears to be an increase in the diode's small-signal resistance.
+![](lt3res.png)
 
 
 
