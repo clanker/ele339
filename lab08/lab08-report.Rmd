@@ -1,5 +1,5 @@
 ---
-title: "Lab 7 Report: Common Collection Amplifier"
+title: "Lab 8 Report: MOSFET Amplifier"
 author: "Cory Lanker"
 date: "`r Sys.Date()`"
 output: pdf_document
@@ -19,49 +19,42 @@ See Figure \ref{fig:p3mod} below.
 
 # Introduction
 
-This lab sets the operating point the BJT in a common collector amplifier
-and then uses LTspice simulations to confirm
-the DC operating point. I did not have enough time to prototype the
+This lab is an interesting introduction to MOSFET amplifiers.
+We compose an emitter follower amplifier with a MOSFET pair current source
+as a load. I did not have enough time to prototype the
 circuit and measure the DC and AC characteristics.
 
 # Design Procedure
 
-Here are the calculated values for this biasing topology:
+Here are the calculated values for the biasing and
+with $R_E = 5000 \Omega$:
 
-![](cc-amp-op.png)
+![](lab8-part1.png){width=50% align='center'}
 
-The formulae for the voltage ratios are:
+Here are the calculated values for the biasing and current source topologies:
 
-$$\frac {v_{out}} {v_{in}} =
-\frac {(\beta + 1)R_E'}{r_\pi + (\beta + 1)R_E'} \\
-\frac {v_{in}} {v_{s}} = \frac {R_{in}} {R_S + R_{in}}$$
+![](lab8-part2.png)
 
-where 
+Note that these LTspice nmos4 madels all have $W = 10$ and $L=0.18$,
+and simulations showed that $\beta_n = 1.111\, mA/V^2$,
+because $\mu_n C_{ox}= 20\, \mu A/V^2$ (found with $W = L$).
 
-$$R_E' = R_E \parallel R_L \parallel r_o \\ 
-R_{in} = R_B \parallel \left( r_\pi + (\beta+1) R_E' \right)$$
+# Small Signal Model
 
-The calculations are
-$v_{out}/v_{s} = (v_{out}/v_{in})(v_{in}/v_{s}) = (0.793)(0.926) = 0.73$
-which is confirmed by the operating point plot of $v_{out}$ vs. $v_s$.
+Here is the AC circuit model that has the same output response
+as the full DC model:
 
-# Output waveform being sinusoidal
+![](lab8-small-sig.png)
 
-The output waveform has gain reduction when the base voltage is reduced by
-a large amount. The amount depends on the load resistor, as $R_L = 1k\Omega$
-was able to tolerate a larger negative voltage. The reason for this is
-the $v_{out}/v_{in}$ equation and its $r_\pi = \tfrac {\beta\, V_T}{I_C}$ 
-in the denominator. Look at how $V_{BE}$ changes greatly when the base voltage decreases:
+# Voltage gain
 
-![](vbe-vs-vs.png)
+The voltage gain is
 
-This change for $V_{BE}$ explains why the current changes so much (and goes to zero if $V_B$ is greatly reduced):
+$$\frac {v_{out}}{v_in} = \frac {g_m R_L}{1 + g_m R_L} = 
+\frac {(0.000471)(1000)}{1 + (0.000471)(1000)} = \frac {0.471}{1.471} = 0.320$$
 
-![](vs-changes-ib.png)
+The LTspice simulation has the $v_{out}$ amplitude as 0.3197.
 
-As $r_\pi$ is inversely proportional to $I_C$, the reduced $V_B$ kills
-the collector current which caused the voltage ratio $v_{out}/v_{in}$ to
-be greatly reduced.
 
 
 
