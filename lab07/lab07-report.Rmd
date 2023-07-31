@@ -1,5 +1,5 @@
 ---
-title: "Lab 7 Report: Common Collection Amplifier"
+title: "Lab 7 Report: Common Collector Amplifier"
 author: "Cory Lanker"
 date: "`r Sys.Date()`"
 output: pdf_document
