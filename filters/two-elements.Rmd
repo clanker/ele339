@@ -1,0 +1,69 @@
+---
+title: "Two Element Filters"
+author: "Cory Lanker"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+library(ggplot2)
+library(dplyr)
+```
+
+This document will show plots of relevant information for R-L-C two-element 
+filters.
+
+## Reactance for capacitors
+```{r}
+f <- 10^seq(1, 9, by = 0.01)
+C <- c(1e-15, 33e-15, 1e-12, 33e-12, 1e-9, 33e-9, 10^seq(-6, -2, by = 1))
+C_value <- c("1f", "33f", "1p", "33p", "1n", "33n", "1u", "10u", "100u", "1000u", "10000u")
+val <- expand.grid(f = f, k = 1:length(C)) |>
+  tibble::as_tibble() |>
+  dplyr::mutate(C = C[k], 
+                C_value = C_value[k] |> factor(levels = C_value),
+                X = 1/2/pi/f/C)
+val |>
+  ggplot(aes(x = f, y = X, color = C_value)) +
+  geom_line(linewidth = 0.9 + log10(val$C)/20,
+            linetype = 1 + (val$C %in% c(1e-3, 1e-6, 1e-9))) +
+  labs(x = "f (Hz)", y = "reactance (Ohms)", color = "C (F)") +
+  scale_x_log10(breaks = 10^(1:8)*2,
+                labels = c("20", "200", "2k", "20k", "200k", "2M", "20M", "200M"),
+                minor_breaks = c(10^(1:8)*5, 10^(1:8)*10),
+                expand = rep(0, 4)) + 
+  scale_y_log10(breaks = c(1, 1000, 1e6),
+                minor_breaks = c(0.1, c(10, 100), c(10, 100)*1000, 1e7),
+                labels = c("1", "1k", "1M"),
+                limits = c(0.1, 1e7),
+                expand = rep(0, 4)) +
+  theme_bw()
+```
+
+## Reactance for inductors
+```{r}
+f <- 10^seq(1, 9, by = 0.01)
+C <- 10^seq(-10, -1, by = 1)
+C_value <- c("100p", "1n", "10n", "100n", "1u", "10u", "100u", "1m", "10m", "100m")
+val <- expand.grid(f = f, k = 1:length(C)) |>
+  tibble::as_tibble() |>
+  dplyr::mutate(C = C[k], 
+                C_value = C_value[k] |> factor(levels = C_value),
+                X = 2*pi*f*C)
+val |>
+  ggplot(aes(x = f, y = X, color = C_value)) +
+  geom_line(linewidth = 1.2 + log10(val$C)/10,
+            linetype = 1 + (val$C %in% c(1e-3, 1e-6, 1e-9))) +
+  labs(x = "f (Hz)", y = "reactance (Ohms)", color = "L (H)") +
+  scale_x_log10(breaks = 10^(1:8)*2,
+                labels = c("20", "200", "2k", "20k", "200k", "2M", "20M", "200M"),
+                minor_breaks = c(10^(1:8)*5, 10^(1:8)*10),
+                expand = rep(0, 4)) + 
+  scale_y_log10(breaks = c(1, 1000, 1e6),
+                minor_breaks = c(0.1, c(10, 100), c(10, 100)*1000, 1e7),
+                labels = c("1", "1k", "1M"),
+                limits = c(0.1, 1e7),
+                expand = rep(0, 4)) +
+  theme_bw()
+```
