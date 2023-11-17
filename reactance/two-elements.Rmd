@@ -67,3 +67,106 @@ val |>
                 expand = rep(0, 4)) +
   theme_bw()
 ```
+
+
+## Plotting capacitors and inductors together
+
+```{r}
+f <- 10^seq(1, 9, by = 0.01)
+C <- 10^seq(-15, -2, by = 1)
+L <- 10^seq(-10, 0, by = 1)
+val_C <- expand.grid(f = f, k = 1:length(C)) |>
+  tibble::as_tibble() |>
+  dplyr::mutate(C = C[k], 
+                X = 1/2/pi/f/C,
+                G = factor(C, levels = 10^seq(-15, 0, by = 1)))
+val_L <- expand.grid(f = f, k = 1:length(L)) |>
+  tibble::as_tibble() |>
+  dplyr::mutate(L = L[k], 
+                X = 2*pi*f*L,
+                G = factor(L, levels = 10^seq(-15, 0, by = 1)))
+
+ggplot(data = val_C, mapping = aes(x = f, y = X, color = G)) +
+  geom_line(linewidth = 0.25 + (val_C$k %% 3 == 1) * (0.9 + log10(val_C$C)/20)) +
+            #linetype = 2 - (val_C$C %in% c(1, 1e-3, 1e-6, 1e-9, 1e-12, 1e-15))) +
+  geom_line(data = val_L, 
+            mapping = aes(x = f, y = X, color = G),
+            linewidth = 0.25 + (val_L$k %% 3 == 2) * (0.75 + log10(val_L$L)/20)) +
+            #linetype = 2 - (val_L$L %in% c(1, 1e-3, 1e-6, 1e-9, 1e-12, 1e-15))) +
+  labs(x = "f (Hz)", y = "reactance (Ohms)") +
+  scale_x_log10(breaks = 10^(1:8)*2,
+                labels = c("20", "200", "2k", "20k", "200k", "2M", "20M", "200M"),
+                minor_breaks = c(10^(1:8)*5, 10^(1:8)*10),
+                expand = rep(0, 4)) + 
+  scale_y_log10(breaks = c(1, 1000, 1e6),
+                minor_breaks = c(0.1, c(10, 100), c(10, 100)*1000, 1e7),
+                labels = c("1", "1k", "1M"),
+                limits = c(0.1, 1e7),
+                expand = rep(0, 4)) +
+  theme_bw()
+ggsave("C-L-reactance.pdf", height=7, width=10)
+```
+
+## Plotting voltage gain for R-C circuits
+
+```{r}
+conv_to_phase <- function(x) { 0.5 + x/360 }
+
+plot_bode <- function(f, Z_1, Z_2, f_lim = NULL) {
+  
+  A = div_mag(Z_1, Z_2)
+  theta = div_ang(Z_1, Z_2)
+  
+  ggplot(data = tibble(f = f, A = A, theta = theta)) +
+    geom_hline(yintercept = seq(0, 1, by = 1/4), lwd = 1/5) +
+    #geom_hline(yintercept = setdiff(seq(1/12, 11/12, by = 1/12), c(1/4, 1/2, 3/4)),
+    #           col = 'red2', lty = 3, lwd = 1/8) +
+    geom_line(mapping = aes(x = f, y = A)) +
+    geom_line(mapping = aes(x = f, y = conv_to_phase(theta)), col = 'red2', lty = 2) +
+    labs(x = "f (Hz)", y = "voltage gain") +
+    scale_x_log10(breaks = 10^(1:8)*2,
+                  labels = c("20", "200", "2k", "20k", "200k", "2M", "20M", "200M"),
+                  minor_breaks = c(10^(1:8)*5, 10^(1:8)*10),
+                  limits = f_lim,
+                  expand = rep(0, 4)) + 
+          scale_y_continuous(breaks = seq(0, 1, by = 0.05), 
+                             expand = rep(0.002, 4),
+                             minor_breaks = NULL,
+                             sec.axis = sec_axis(~ 360 * (. - 0.5), 
+                                                 name = "phase (deg.)",
+                                                 breaks = seq(-180, 180, by = 30))) +
+    theme_bw()
+}
+```
+
+```{r}
+Ang <- function(z) { atan(Im(z)/(Re(z) + 1e-12)) * (180/pi) }
+div_mag <- function(z1, z2) { abs(z2) / abs(z1 + z2) }
+div_ang <- function(z1, z2) { Ang(z2) - Ang(z1 + z2) }
+
+Z_par <- function(z1, z2) { (z1 * z2) / (z1 + z2) }
+Z_C <- function(f, C) { -1i / (2*pi*f*C) }
+Z_L <- function(f, L) { 1i * 2*pi*f*L }
+R_model <- function(f, R, L_lead = 5e-9, C_par = 1e-12) { Z_par(R + Z_L(f, L_lead), Z_C(f, C_par)) }
+C_model <- function(f, C, esr = 0.01, L_lead = 5e-9) { Z_C(f, C) + esr + Z_L(f, L_lead) }
+L_model <- function(f, L, r = NULL) { Z_L(f, L) + if (is.null(r))  5e3 * L  else  r }
+```
+
+
+```{r}
+f <- 10^seq(1, 9, length = 1000)
+R <- 1000
+C <- 1e-9
+#plot_bode(f, R_model(f, R), C_model(f, C))
+plot_bode(f, R_model(f, 100), C_model(f, 1e-9) + L_model(f, 100e-6, 0.5), c(0.2e5, 2e6))
+```
+
+## RLC example
+```{r}
+#plot_bode(f, C_model(f, 1e-9) + L_model(f, 100e-6, 0.5), R_model(f, 100), c(0.2e5, 2e6))
+#plot_bode(f, C_model(f, 0.16e-9) + L_model(f, 250e-6, 0.5), R_model(f, 12.6), c(0.2e5, 2e6))
+plot_bode(f, C_model(f, 1e-6) + L_model(f, 0.01, 25), R_model(f, 100), c(100, 10000))
+plot_bode(f, C_model(f, 1e-6) + L_model(f, 0.01, 0), R_model(f, 100), c(100, 10000))
+plot_bode(f, C_model(f, 1e-6) + L_model(f, 0.1, 0), R_model(f, 10), c(100, 10000))
+```
+
