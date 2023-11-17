@@ -1,0 +1,134 @@
+Example "Nan-O-Plot"
+
+********************************************************************************
+**
+**  N a n - O - P l o t
+**
+********************************************************************************
+**
+**  This example demonstrates how to produce graphs containing dotted, dashed,
+**  and multi-coloured curves.
+**
+**  The trick is to exploit the fact that curve points involving NaN values, 
+**  either on the x-axis and/or on the y-axis are skipped in graphs, without
+**  producing any error messages.
+**
+**  MacSpice added IEEE-754 floating-point conformity to all commands and
+**  functions in version 2.9.33, see:
+**
+**      http://www.macspice.com/Release.html#2.9.33
+**
+**  This example was provided by Gert Willmann, Stuttgart, Germany.
+**
+********************************************************************************
+
+**
+** Simple bridge rectifier circuit
+**
+
+Vin  ac1 ac2  DC 0V  SIN (0V 6V 50Hz)
+
+D1  ac1 1  DMOD
+D2  ac2 1  DMOD
+D3  0 ac1  DMOD
+D4  0 ac2  DMOD
+R1  1 0    1k
+
+.model DMOD d ()
+
+**
+** Analysis control
+**
+
+.control
+   delete all
+   destroy all
+
+   * Set background/foreground colours
+
+   set color0 = rgb:8/8/8
+   set color1 = rgb:f/f/f
+
+   * Perform transient analysis
+
+   tran 10us 40ms 0s 10us
+   linearize
+
+   * Generate some standard plots
+
+   let v_in = v(ac1)-v(ac2)
+   let v_out = v(1)
+
+   set color2 = rgb:0/f/0
+
+   plot v_in
++     xdelta 10m  ydelta 2  ylimit -8 8
++     title "Nan-O-Plot - Standard curves (1)"
+
+   set color2 = rgb:f/0/0
+
+   plot v_out
++     xdelta 10m  ydelta 2  ylimit -8 8
++     title "Nan-O-Plot - Standard curves (2)"
+
+   set color2 = rgb:0/f/0
+   set color3 = rgb:f/0/0
+
+   plot v_in v_out
++     xdelta 10m  ydelta 2  ylimit -8 8
++     title "Nan-O-Plot - Standard curves (3)"
+
+   * Some tricky function definitions; note that
+   * - the expression 0/0 produces NaN, without any error messages
+   * - curve points involving NaNs on x-axis and/or y-axis are not plotted
+   * - the last two definitions are tailored to the above 'tran' analysis
+
+   undefine mask_pos mask_neg
+   undefine mask_dashed mask_dotted
+
+   define mask_pos(x) (x>=0)/(x>=0)
+   define mask_neg(x) (x<0)/(x<0)
+
+   define mask_dashed(t) (t%800u<400u)/(t%800u<400u)
+   define mask_dotted(t) (t%200u<66u)/(t%200u<66u)
+
+   * Example 1: Make all curves dotted
+
+   let saved_time = time
+   let time = time * mask_dotted(time)
+
+   set color2 = rgb:0/f/0
+   set color3 = rgb:f/0/0
+
+   plot v_in v_out
++     xdelta 10m  ydelta 2  ylimit -8 8
++     title "Nan-O-Plot - Dotted curves"
+
+   * Example 2: Produce dashed and multi-coloured curves
+
+   let time = saved_time
+   let v_in_dashed = v_in * mask_dashed(time)
+   let v_out_positive_half_wave = v_out * mask_pos(v_in)
+   let v_out_negative_half_wave = v_out * mask_neg(v_in)
+
+   set color2 = rgb:0/f/0
+   set color3 = rgb:f/0/0
+   set color4 = rgb:3/3/f
+
+   plot v_in_dashed v_out_positive_half_wave v_out_negative_half_wave
++     xdelta 10m  ydelta 2  ylimit -8 8
++     title "Nan-O-Plot - Dashed and multi-coloured curves"
+
+   * Clean-up
+
+   undefine mask_pos mask_neg
+   undefine mask_dashed mask_dotted
+
+   unset color0 color1
+   unset color2 color3 color4
+
+   delcirc all
+   destroy all
+   delete all
+.endc
+.end

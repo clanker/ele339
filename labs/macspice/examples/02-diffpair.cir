@@ -1,0 +1,36 @@
+02 - Simple Differential Pair
+*
+* Charles D. H. Williams 2007
+*
+* see http://www.macspice.com/examples/Introductory.html#01
+
+vin 1 0 sin(0 0.1V 6MEG) ac 1.0 dc 0.0
+vplus 8 0 dc 15
+vminus 9 0 dc -15
+q1 4 2 6 generic
+q2 5 3 6 generic
+q3 6 7 9 generic
+q4 7 7 9 generic
+r1 1 2 1k
+r2 3 0 1k
+r3 4 8 10k
+r4 5 8 10k
+r5 7 8 22k
+.model generic npn(bf=80 rb=100 ccs=2pf tf=0.3ns tr=6ns cje=3pf cjc=2pf va=50)
+
+.control
+delete all
+* Transfer function analysis
+tf v(5) vin
+print all
+* DC sweep analysis
+dc vin -0.25 0.25 0.005
+plot v(5)
+* Frequency domain analysis
+ac dec 10 1Hz 10GHz
+plot vm(5) vp(5)
+* Time domain analysis
+tran 5ns 2us 0 50ns
+plot v(5)
+.endc
+.end

@@ -1,0 +1,72 @@
+06 - Test Circuit for UA555 MacSpice Model in Astable Mode
+*
+* Charles D. H. Williams 2020
+*
+* see http://www.macspice.com/eg/Introductory.html#06
+*
+v1 vcc 0 dc 0.0 pulse 0.0 5.0
+r1 vcc discharge 1200
+r2 discharge trig 4700
+c1 trig 0 1.0u
+x1 0 trig output reset control trig discharge vcc ua555 
+.control
+tran 1ms 50ms 0 0.1ms
+plot v(output) v(trig) v(reset) v(control)
+.endc
+
+* Fairchild Data Book (1982) pp 9-3.
+.subckt ua555  gnd tr out rst ctl th dis vcc 
+*         PIN   1   2  3   4   5   6  7   8
+q4 25 2 3 qp
+q5 gnd 6 3 qp
+q6 6 6 8 qp
+r1 9 vcc 4.7k
+r2 3 vcc 830
+r3 8 vcc 4.7k
+q7 2 th 5 qn
+q8 2 5 17 qn
+q9 6 4 17 qn
+q10 6 ctl 4 qn
+q11 12 20 10 qp
+r4 10 vcc 1k
+q12 22 11 12 qp
+q13 14 13 12 qp
+q14 gnd tr 11 qp
+q15 14 18 13 qp
+r5 14 gnd 100k
+r6 22 gnd 100k
+r7 17 gnd 10k
+q16 dis 15 gnd qn
+q17 15 rst 31 qp
+r8 18 ctl 5k
+r9 18 gnd 5k
+r10 vcc ctl 5k
+q18 27 20 vcc qp
+q19 20 20 vcc qp
+r11 20 31 5k
+d1 31 24 da
+q20 24 25 gnd qn
+q21 25 22 gnd qn
+q22 27 24 gnd qn
+r12 25 27 4.7k
+r13 vcc 29 6.8k
+q23 vcc 29 28 qn
+q24 29 27 16 qn
+q25 out 26 gnd qn
+q26 vcc 28 out qn
+d2 out 29 da
+r14 16 15 100
+r15 16 26 220
+r16 16 gnd 4.7k
+r17 28 out 3.9k
+q3 2 2 9 qp
+.model da d (rs=40 is=1.0e-14 cjo=1pf)
+.model qp pnp (bf=20 br=0.02 rc=4 rb=25 is=1.0e-14 va=50 ne=2)  
++ cje=12.4p vje=1.1 mje=.5 cjc=4.02p vjc=.3 mjc=.3 tf=229p tr=159n)
+.model qn npn (is=5.07f nf=1 bf=100 vaf=161 ikf=30m ise=3.9p ne=2       
++ br=4 nr=1 var=16 ikr=45m re=1.03 rb=4.12 rc=.412 xtb=1.5      
++ cje=12.4p vje=1.1 mje=.5 cjc=4.02p vjc=.3 mjc=.3 tf=229p tr=959p)
+.ends
+
+.end
+

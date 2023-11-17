@@ -1,0 +1,60 @@
+5th-Order Low-Pass Filter
+*
+* Transfer function:
+*
+*         I(r2)                  0.113 * (s^2 + 1.6543)*(s^2 + 0.2632)
+*  T(s) = ----- = -------------------------------------------------------------------
+*          Iin    (s^5 + 0.9206*s^4 + 1.26123*s^3 + 0.74556*s^2 + 0.2705*s + 0.09836) 
+*
+* Results from HSpice tutorial example:
+*
+*                Poles (rad/sec)
+*              Real           Imag
+* pole1 = (-6.948473e-02,-4.671778e-01)
+* pole2 = (-6.948473e-02, 4.671778e-01)
+* pole3 = (-1.182742e-01,-8.914907e-01)
+* pole4 = (-1.182742e-01, 8.914907e-01)
+* pole5 = (-5.450890e-01, 0.000000e+00)
+*
+*                Zeros (rad/sec)
+*              Real           Imag
+* zero1 = ( 0.000000e+00,-5.129892e-01)
+* zero2 = ( 0.000000e+00, 5.129892e-01)
+* zero3 = ( 0.000000e+00,-1.286180e+00)
+* zero4 = ( 0.000000e+00, 1.286180e+00)
+*
+* Constant Factor = 1.129524e-01 
+*
+vn 0 1  1.00  ac  1 
+r1   1  0  1.0 
+r2   3  0  1.00
+c1   1  2  0.93
+c2   2  3  3.80
+c3   1  0  1.52
+c4   2  0  1.50
+c5   3  0  0.83
+l1   1  2  0.65
+l2   2  3  1.00
+
+.control
+* Create plot containing poles and zeros
+pz 1 0 3 0  cur pz
+* Create plot containg ac analysis
+ac  dec  100  .001HZ  10HZ
+* Plot the pole-zero transfer function
+* Create the s (complex frequency) vector
+let s = i*frequency*2*pi
+* Evaluate the pole-zero function. The current plot is 'ac' so the 'pz.' prefix
+* is needed to evaluate the poles and zeros which are not in the current plot.
+let pzfn = (1,0)*unitvec(length(s))
+foreach j 1 2 3 4
+	let pzfn = pzfn * ((-pz.zero($j)+s)/(-pz.pole($j)+s))
+end
+let pzfn = pzfn/(-pz.pole(5)+s)
+*
+* Display the results. Omit the constant factor from the pz plot for clarity 
+*
+plot db(v(3)/i(vn)) db(pzfn)
+plot phase(v(3)/i(vn)) phase(pzfn)
+.endc
+.end

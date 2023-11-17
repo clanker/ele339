@@ -1,0 +1,55 @@
+Simple Differential Pair - AC response at several temperatures
+*
+* Charles D. H. Williams 2018
+*
+
+vin 1 0 sin(0 0.1V 6MEG) ac 1.0 dc 0.0
+vplus 8 0 dc 15
+vminus 9 0 dc -15
+q1 4 2 6 generic
+q2 5 3 6 generic
+q3 6 7 9 generic
+q4 7 7 9 generic
+r1 1 2 1k
+r2 3 0 1k
+r3 4 8 10k
+r4 5 8 10k
+r5 7 8 22k
+.model generic npn(bf=80 rb=100 ccs=2pf tf=0.3ns tr=6ns cje=3pf cjc=2pf va=50)
+
+.control
+unset plotlist
+
+* Create a new 'unknown' plot to hold the results
+setplot new
+
+let temps = ( -65 ; 25 ; 125 )
+set names = ' '
+
+let j = 0
+while (j < length(temps) )
+	let T = temps[j]
+	set temp = $&T
+	let j = j + 1
+	* Frequency domain analysis
+	ac dec 10 100Hz 10MegHz
+	setplot unknown 
+	let frequency = ac.frequency
+	let abs_temp = abs(T)
+	* Can't use a minus symbol (hyphen) in vector names, so use a dash instead
+	if ( T > 0 )
+		set sign = ""
+	else
+		set sign = "–"
+	end if
+	set name = "T_$sign{$&abs_temp}°C"
+	set names = ( $names $name ) 
+	let $name = db(ac.v(5))
+	setplot ac
+	destroy
+end while
+
+plot $names vs frequency xlog title "Differential Pair"
+
+.endc
+.end
