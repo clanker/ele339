@@ -31,15 +31,15 @@ fluidPage(
     # Sidebar with a slider input for number of bins
     sidebarLayout(
         sidebarPanel(
-          "Define the parameters of the RLC circuit:",
+          "Define the parameters of the RLC circuit:\n",
           "\nElement 1",
           radioButtons("type_s1", "Type for element #1", element_choices,
                        inline = TRUE, selected = "R"),
           numericInput("value_s1", "Value for element #1", value = 100),
-          "\nElement 2",
-          radioButtons("type_s2", "Type for element #2", element_choices,
-                       inline = TRUE, selected = "R"),
-          numericInput("value_s2", "Value for element #2", value = 1000000),
+          # "\nElement 2",
+          # radioButtons("type_s2", "Type for element #2", element_choices,
+          #              inline = TRUE, selected = "R"),
+          # numericInput("value_s2", "Value for element #2", value = 1000000),
           "\nElement 3",
           radioButtons("type_s3", "Type for element #3", element_choices,
                        inline = TRUE, selected = "C"),
