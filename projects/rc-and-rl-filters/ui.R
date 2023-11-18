@@ -9,25 +9,30 @@
 
 library(shiny)
 
+element_choices <- c("R", "C")
+
 # Define UI for application that draws a histogram
 fluidPage(
 
     # Application title
-    titlePanel("Old Faithful Geyser Data"),
+    titlePanel("R-C Filter Bode Plots"),
 
     # Sidebar with a slider input for number of bins
     sidebarLayout(
         sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
+            radioButtons("type_s1", "Type for element #1", element_choices,
+                         inline = TRUE, selected = "R"),
+            numericInput("value_s1", "Value for element #1", value = 1000),
+            #radioButtons("type_s2", "Type for series #2", element_choices,
+            #             inline = TRUE, selected = "C"),
+            numericInput("value_s2", "Value for element #2", value = 1e-6),
+            width = 3
         ),
 
         # Show a plot of the generated distribution
         mainPanel(
-            plotOutput("distPlot")
+            plotOutput("magPlot"),
+            plotOutput("phasePlot")
         )
     )
 )
