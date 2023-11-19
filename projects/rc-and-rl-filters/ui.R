@@ -20,7 +20,7 @@
 library(shiny)
 library(tidyverse)
 
-element_choices <- c("R", "C", "L") #, "none")
+element_choices <- c("R", "C", "L", "none")
 
 # Define UI for application that draws a histogram
 fluidPage(
@@ -31,28 +31,29 @@ fluidPage(
     # Sidebar with a slider input for number of bins
     sidebarLayout(
         sidebarPanel(
-          "Define the parameters of the RLC circuit:\n",
-          "\nElement 1",
-          radioButtons("type_s1", "Type for element #1", element_choices,
-                       inline = TRUE, selected = "R"),
-          numericInput("value_s1", "Value for element #1", value = 100),
-          # "\nElement 2",
-          # radioButtons("type_s2", "Type for element #2", element_choices,
-          #              inline = TRUE, selected = "R"),
-          # numericInput("value_s2", "Value for element #2", value = 1000000),
-          "\nElement 2",
-          radioButtons("type_s2", "Type for element #2", element_choices,
-                       inline = TRUE, selected = "C"),
-          numericInput("value_s2", "Value for element #2", value = 1e-8),
-          "\nElement 3",
-          radioButtons("type_s3", "Type for element #3", element_choices,
-                       inline = TRUE, selected = "L"),
-          numericInput("value_s3", "Value for element #3", value = 0.001),
-          "\nOutput node",
+          "Define the RLC circuit parameters:",
+          #"(in) #1 -- (#4 to gnd) -- #2 -- (#3 to gnd)\n",
+          #"\nOutput node",
           radioButtons("output_node", "Output node:",
                        c("Between 1-2", "Between 2-3"),
-                       inline = TRUE, selected = "Between 1-2"),
-          width = 3
+                       inline = TRUE, selected = "Between 2-3"),
+          "\nElement 1",
+          radioButtons("type_s1", NULL, element_choices,
+                       inline = TRUE, selected = "R"),
+          numericInput("value_s1", "Value for element #1", value = 10),
+          "\nSeries Element 2",
+          radioButtons("type_s2", NULL, element_choices,
+                       inline = TRUE, selected = "C"),
+          numericInput("value_s2", "Value for element #2", value = 1e-8),
+          "\nSeries Element 3",
+          radioButtons("type_s3", NULL, element_choices,
+                       inline = TRUE, selected = "L"),
+          numericInput("value_s3", "Value for element #3", value = 0.01),
+          "\nParallel Element 4",
+          radioButtons("type_s4", NULL, element_choices,
+                       inline = TRUE, selected = "none"),
+          numericInput("value_s4", "Value for element #4", value = 10000),
+          width = 4
         ),
 
         # Show a plot of the generated distribution

@@ -9,38 +9,13 @@
 
 library(shiny)
 
-library(Ryacas)
+library(Ryacas0)
 library(tidyverse)
 
-as_function <- function(expr) {
-  as.function(alist(x =, eval(parse(text = expr))))
-}
+s <- Sym("s")
 
-# redefine D function
-D <- function(eq, order = 1) {
-  yac_str(paste("D(x,", order, ")", eq))
-}
-
-eq_add <- function(str1, str2, str3 = NULL) {
-  out <- paste("(", str1, "+", str2)
-  if (!is.null(str3))  out <- paste(out, "+", str3)
-  paste(out, ")")
-}
-
-eq_mult <- function(str1, str2, str3 = NULL) {
-  out <- paste(str1, "*", str2)
-  if (!is.null(str3))  out <- paste(out, "*", str3)
-  out
-}
-
-eq_div <- function(str1, str2, str3 = NULL) {
-  out <- paste(str1, "/", str2)
-  if (!is.null(str3))  out <- paste(out, "/", str3)
-  out
-}
-
-eq_parallel <- function(str1, str2) {
-  out <- paste(str1, "*", str2, "/ (", str1, "+", str2, ")")
+eq_parallel <- function(exp1, exp2) {
+  (exp1 * exp2) / (exp1 + exp2)
 }
 
 conv_to_phase <- function(x, max_dB, spread=60) {
@@ -59,7 +34,16 @@ plot_bode <- function(f, x, f_lim = NULL) {
   A_dB <- 20*log10(A+1e-12)
 
   freq_range <- f[A_dB >= max_dB - 60]
-  freq_range <- setdiff(freq_range, f[A > 0.995 & A < 1.005])
+  freq_range <- setdiff(freq_range, f[A > 0.999 & A < 1.001])
+  if (length(freq_range) < 40) {
+    f_min <- f[which.min(A)]
+    freq_range <- f[A_dB >= max_dB - 60]
+    freq_range <- setdiff(freq_range, f[f < f_min*0.05])
+    freq_range <- setdiff(freq_range, f[f > f_min*20])
+  }
+  if (length(freq_range) < 40) {
+    freq_range <- f[A_dB >= max_dB - 60]
+  }
 
   ggplot(data = tibble(f = f, A = A_dB, theta = theta)) +
     geom_hline(yintercept = seq(max_dB-60, max_dB, by = 15), lwd = 1/5) +
@@ -87,10 +71,10 @@ plot_bode <- function(f, x, f_lim = NULL) {
 }
 
 calc_s <- function(type, value) {
-  if (type == "R") return (as.character(value))
-  if (type == "C") return (sprintf("%s / x", as.character(1/value)))
-  if (type == "L") return (sprintf("%s * x", as.character(value)))
-  #if (type == "none") return (NA_character_)
+  if (type == "R") return (value)
+  if (type == "C") return ((1 / value) / s)
+  if (type == "L") return (value * s)
+  if (type == "none") return (NA)
 }
 
 # Define server logic required to draw a histogram
@@ -98,24 +82,29 @@ function(input, output, session) {
 
   output$bodePlot <- renderPlot({
 
-    s1_string <- calc_s(input$type_s1, input$value_s1)
-    s2_string <- calc_s(input$type_s2, input$value_s2)
-    s3_string <- calc_s(input$type_s3, input$value_s3)
-    #s4_string <- calc_s(input$type_s4, input$value_s4)
+    s1 <- calc_s(input$type_s1, input$value_s1)
+    s2 <- calc_s(input$type_s2, input$value_s2)
+    s3 <- calc_s(input$type_s3, input$value_s3)
+    s4 <- calc_s(input$type_s4, input$value_s4)
+
     if (input$output_node == "Between 1-2") {
-      fxn_H <- as_function(eq_div(
-        eq_add(s2_string, s3_string),
-        eq_add(s1_string, s2_string, s3_string)
-      ))
+      if (is.na(s4)) {
+        fxn_H <- (s2 + s3) / (s1 + s2 + s3)
+      } else {
+        s_equiv <- eq_parallel(s2 + s3, s4)
+        fxn_H <- s_equiv / (s1 + s_equiv)
+      }
     } else {
-      fxn_H <- as_function(eq_div(
-        s3_string,
-        eq_add(s1_string, s2_string, s3_string)
-      ))
+      if (is.na(s4)) {
+        fxn_H <- s3 / (s1 + s2 + s3)
+      } else {
+        s_equiv <- eq_parallel(s2 + s3, s4)
+        fxn_H <- s_equiv / (s1 + s_equiv) * s3 / (s2 + s3)
+      }
     }
 
-    f <- 10^seq(0, 8, by = 0.001)
-    x <- sapply(f*2i*pi, fxn_H)
+    f <- 10^seq(0, 8, by = 0.01)
+    x <- Eval(fxn_H, list(s=f*2i*pi))
 
     plot_bode(f, x)
 
