@@ -26,7 +26,7 @@ element_choices <- c("R", "C", "L") #, "none")
 fluidPage(
 
     # Application title
-    titlePanel("R-C Filter Bode Plots"),
+    titlePanel("RLC Series Filter Bode Plots"),
 
     # Sidebar with a slider input for number of bins
     sidebarLayout(
@@ -40,14 +40,18 @@ fluidPage(
           # radioButtons("type_s2", "Type for element #2", element_choices,
           #              inline = TRUE, selected = "R"),
           # numericInput("value_s2", "Value for element #2", value = 1000000),
+          "\nElement 2",
+          radioButtons("type_s2", "Type for element #2", element_choices,
+                       inline = TRUE, selected = "C"),
+          numericInput("value_s2", "Value for element #2", value = 1e-8),
           "\nElement 3",
           radioButtons("type_s3", "Type for element #3", element_choices,
-                       inline = TRUE, selected = "C"),
-          numericInput("value_s3", "Value for element #3", value = 1e-8),
-          "\nElement 4",
-          radioButtons("type_s4", "Type for element #4", element_choices,
                        inline = TRUE, selected = "L"),
-          numericInput("value_s4", "Value for element #4", value = 0.001),
+          numericInput("value_s3", "Value for element #3", value = 0.001),
+          "\nOutput node",
+          radioButtons("output_node", "Output node:",
+                       c("Between 1-2", "Between 2-3"),
+                       inline = TRUE, selected = "Between 1-2"),
           width = 3
         ),
 
