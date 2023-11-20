@@ -13,10 +13,9 @@ library(Ryacas0)
 library(tidyverse)
 
 s <- Sym("s")
-
-eq_parallel <- function(exp1, exp2) {
-  (exp1 * exp2) / (exp1 + exp2)
-}
+R <- Sym("R")
+L <- Sym("L")
+C <- Sym("C")
 
 conv_to_phase <- function(x, max_dB, spread=60) {
   max_dB - spread + spread*(0.5 + x/360)
@@ -81,33 +80,17 @@ calc_s <- function(type, value) {
 function(input, output, session) {
 
   output$bodePlot <- renderPlot({
+  #output$bodePlot <- renderText({
 
-    s1 <- calc_s(input$type_s1, input$value_s1)
-    s2 <- calc_s(input$type_s2, input$value_s2)
-    s3 <- calc_s(input$type_s3, input$value_s3)
-    s4 <- calc_s(input$type_s4, input$value_s4)
-
-    if (input$output_node == "Between 1-2") {
-      if (is.na(s4)) {
-        fxn_H <- (s2 + s3) / (s1 + s2 + s3)
-      } else {
-        s_equiv <- eq_parallel(s2 + s3, s4)
-        fxn_H <- s_equiv / (s1 + s_equiv)
-      }
-    } else {
-      if (is.na(s4)) {
-        fxn_H <- s3 / (s1 + s2 + s3)
-      } else {
-        s_equiv <- eq_parallel(s2 + s3, s4)
-        fxn_H <- s_equiv / (s1 + s_equiv) * s3 / (s2 + s3)
-      }
-    }
+    s1 <- eval(parse(text = input$numerator))
+    s2 <- eval(parse(text = input$denominator))
+    fxn_H <- s1/s2
 
     f <- 10^seq(0, 8, by = 0.01)
-    x <- Eval(fxn_H, list(s=f*2i*pi))
+    x <- Eval(fxn_H, list(s=f*2i*pi, R=input$val_R, L=input$val_L, C=input$val_C))
 
     plot_bode(f, x)
-
+    #paste(s1, s2, fxn_H)
  })
 
 }
