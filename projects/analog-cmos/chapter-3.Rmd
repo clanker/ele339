@@ -1,0 +1,57 @@
+---
+title: "Chapter 3: Single-Stage Amplifiers"
+author: "Cory Lanker"
+date: "2024-01-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# constants for the simulations
+Vdd <- 3
+kn <- 100e-6 * 50
+calc_Vth <- function(gamma, Vsb = 0, Vth0 = 0.7, two_phi = 0.9) {
+  Vth0 + gamma * (sqrt(two_phi + Vsb) - sqrt(two_phi))
+}
+In <- function(Vg, Vd, Vs, Vb = 0, 
+               k_n = 100e-6, W_L = 50, gamma = 0.45, lambda = 0.1, ...) {
+  Vth <- calc_Vth(gamma, Vsb = Vs - Vb, ...)
+  if (Vd > Vg - Vth) {
+    # saturation
+    return(0.5*k_n*W_L*(Vg - Vs - Vth)^2 * (1 + lambda*(Vd - Vg + Vth)))
+  } else {
+    # triode
+    return(0.5*k_n*W_L*(2*(Vg - Vs - Vth)*(Vd - Vs) - (Vd - Vs)^2))
+  }
+}
+```
+
+# Common Source Stage with $R_D$ (Section 3.3.1)
+
+The output voltage is $V_{DD} - I_D R_D$. 
+Here are plots of:
+
+1. $V_{out}$ vs. $V_{in}$
+2. $I_D$ vs. $V_{in}$
+3. $A_v$ vs. $V_{in}$
+4. $g_m$ vs. $V_{in}$
+
+```{r}
+# These plots answer questions posed in Example 3.1
+
+```
+
+A problem with this amplifier is that the $A_v$ is linear with
+$g_m$ that is linear with $V_{in} - V_{TH}$, so in the $V_{in}$
+input swing is not small, nonlinearity in the amplification $A_v$
+exists.
+
+```{r}
+# Example 3.2: for an input sinusoid with a large input swing,
+#   plot V_out vs. time and plot g_m vs. time
+
+```
+
+
+
+
